@@ -1,0 +1,82 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile containing balances, local settings, role, and KYC answers.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The user's full name" },
+        "email": { "type": "string", "description": "The user's unique email address" },
+        "phone": { "type": "string", "description": "The user's mobile search/contact number" },
+        "bankName": { "type": "string", "description": "Beneficiary local bank name" },
+        "accountName": { "type": "string", "description": "Beneficiary local account name" },
+        "accountNumber": { "type": "string", "description": "Beneficiary bank account number" },
+        "balance": { "type": "number", "description": "Current available wallet balance in PHP" },
+        "investmentAmount": { "type": "number", "description": "Volume of active funds engaged in plans" },
+        "profitAmount": { "type": "number", "description": "Sum of total generated profits paid" },
+        "soundEffects": { "type": "boolean", "description": "UI accessibility SFX preference toggle" },
+        "hapticFeedback": { "type": "boolean", "description": "UI haptics preferences" },
+        "country": { "type": "string", "description": "Selected country region of the trader" },
+        "currency": { "type": "string", "description": "Preferred ledger currency (PHP/USD)" },
+        "investmentPlan": { "type": "string", "description": "Active subscripted plan tier key" },
+        "kycStatus": { "type": "string", "enum": ["None", "Pending", "Approved", "Rejected"] },
+        "kycRejectReason": { "type": "string", "description": "Optional notes from compliance administrator" },
+        "role": { "type": "string", "enum": ["User", "Support Admin", "Compliance Admin", "Finance Admin", "System Owner"] },
+        "profileImageUrl": { "type": "string", "description": "The URL of the user's uploaded or selected profile picture" }
+      },
+      "required": ["name", "email", "balance"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "A ledger ledger deposit or withdrawal record tracking progress details.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string", "enum": ["deposit", "withdrawal"] },
+        "amount": { "type": "number" },
+        "bankName": { "type": "string" },
+        "accountName": { "type": "string" },
+        "accountNumber": { "type": "string" },
+        "date": { "type": "string" },
+        "status": { "type": "string", "enum": ["Pending", "Processing", "Approved", "Declined", "Verification Required"] },
+        "statusReason": { "type": "string" },
+        "companyNote": { "type": "string" },
+        "referenceId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "userName": { "type": "string" }
+      },
+      "required": ["id", "type", "amount", "userEmail", "status"]
+    },
+    "SupportTicket": {
+      "title": "SupportTicket",
+      "description": "Customer issues, inquiries, or complaints logged by users.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "userName": { "type": "string" },
+        "subject": { "type": "string" },
+        "category": { "type": "string", "enum": ["Deposit", "Withdrawal", "KYC", "Account Security", "General Inquiry"] },
+        "message": { "type": "string" },
+        "status": { "type": "string", "enum": ["Open", "In Progress", "Resolved", "Closed"] },
+        "priority": { "type": "string", "enum": ["Low", "Medium", "High", "Critical"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "userEmail", "subject", "message", "status"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profiles cataloged by Firebase Authentication UID"
+    },
+    "transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "Deposit and withdrawal ledger items"
+    },
+    "tickets/{ticketId}": {
+      "schema": "SupportTicket",
+      "description": "Customer support logs"
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "PH Institutional Trading Desk",
+  "description": "A SEC-regulated, BSP-supervised corporate multi-asset trading platform with premium customer and administrator portals, live settlement tickers, and AI support relationship routing.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

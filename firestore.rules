@@ -1,0 +1,73 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function getRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+        getRole() == "System Owner" || 
+        getRole() == "Finance Admin" || 
+        getRole() == "Compliance Admin" || 
+        getRole() == "Support Admin"
+      );
+    }
+
+    // Match users
+    match /users/{userId} {
+      allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow list: if isSignedIn() && isAdmin();
+      
+      allow create: if isSignedIn() && request.auth.uid == userId && 
+                    request.resource.data.keys().hasAll(['name', 'email', 'balance']) &&
+                    (request.resource.data.get('role', 'User') == 'User');
+                    
+      allow update: if isSignedIn() && (
+        (request.auth.uid == userId && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'balance', 'investmentAmount', 'profitAmount', 'kycStatus', 'kycRejectReason'])) ||
+        isAdmin()
+      );
+      
+      allow delete: if isSignedIn() && isAdmin();
+    }
+
+    // Match transactions
+    match /transactions/{transactionId} {
+      allow get: if isSignedIn() && (resource.data.userEmail == request.auth.token.email || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userEmail == request.auth.token.email || isAdmin());
+      
+      allow create: if isSignedIn() && request.resource.data.userEmail == request.auth.token.email && 
+                    request.resource.data.status == "Pending";
+      
+      allow update: if isSignedIn() && isAdmin();
+      allow delete: if isSignedIn() && isAdmin();
+    }
+
+    // Match support tickets
+    match /tickets/{ticketId} {
+      allow get: if isSignedIn() && (resource.data.userEmail == request.auth.token.email || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userEmail == request.auth.token.email || isAdmin());
+      
+      allow create: if isSignedIn() && request.resource.data.userEmail == request.auth.token.email;
+      
+      allow update: if isSignedIn() && (
+        (resource.data.userEmail == request.auth.token.email && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['userEmail', 'createdAt'])) ||
+        isAdmin()
+      );
+      
+      allow delete: if isSignedIn() && isAdmin();
+    }
+  }
+}
