@@ -209,19 +209,21 @@ export const Header: React.FC = () => {
               )}
               {isLoggedIn ? profile.name : "Sign In"}
             </button>
-            <button
-              onClick={() => {
-                setView("admin_dashboard");
-              }}
-              className={`px-3 py-1.5 rounded-md text-xs font-semibold tracking-wide transition-all flex items-center gap-1.5 cursor-pointer ${
-                currentView === "admin_dashboard"
-                  ? "bg-purple-600 text-white shadow-sm"
-                  : "text-slate-400 hover:text-white"
-              }`}
-            >
-              <ShieldCheck size={13} />
-              Admin Portal
-            </button>
+            {isLoggedIn && profile?.role && ["System Owner", "Finance Admin", "Compliance Admin", "Support Admin"].includes(profile.role) && (
+              <button
+                onClick={() => {
+                  setView("admin_dashboard");
+                }}
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold tracking-wide transition-all flex items-center gap-1.5 cursor-pointer ${
+                  currentView === "admin_dashboard"
+                    ? "bg-purple-600 text-white shadow-sm"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <ShieldCheck size={13} />
+                Admin Portal
+              </button>
+            )}
           </div>
 
           {/* Conditional auth button */}
