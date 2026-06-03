@@ -34,6 +34,11 @@ function getGeminiClient(): GoogleGenAI {
   return aiClient;
 }
 
+// REST API for Uptime Ping Tools
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
 // REST API for Gemini Chat Manager Support
 app.post("/api/chat", async (req, res) => {
   try {

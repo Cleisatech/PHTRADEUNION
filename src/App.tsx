@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { SimulationProvider, useSimulation } from "./context/SimulationContext";
 import { Header } from "./components/Header";
 import { LandingPage } from "./components/LandingPage";
@@ -10,6 +10,10 @@ import { AnimatePresence, motion } from "motion/react";
 
 const MainAppContent: React.FC = () => {
   const { currentView, isLoggedIn, themeConfig } = useSimulation();
+
+  useEffect(() => {
+    document.title = themeConfig?.siteName || "PH TRADE UNION";
+  }, [themeConfig?.siteName]);
 
   const getFontFamilyStyle = (font: string) => {
     switch (font) {

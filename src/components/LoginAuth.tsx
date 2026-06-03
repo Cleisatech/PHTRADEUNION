@@ -11,12 +11,13 @@ interface LoginAuthProps {
 }
 
 export const LoginAuth: React.FC<LoginAuthProps> = ({ initialMode = "login" }) => {
-  const { login, signup, setView, investmentPlans, themeConfig, getThemeStyles } = useSimulation();
+  const { login, signup, setView, investmentPlans, themeConfig, getThemeStyles, resetPassword } = useSimulation();
   const theme = getThemeStyles(themeConfig?.primaryColor || "blue");
 
-  const [mode, setMode] = useState<"login" | "signup">(initialMode);
+  const [mode, setMode] = useState<"login" | "signup" | "forgot">(initialMode);
   const [signupStep, setSignupStep] = useState<1 | 2>(1);
   const [loading, setLoading] = useState(false);
+  const [resetMessage, setResetMessage] = useState({ type: "", text: "" });
 
   // Form states - Login
   const [loginEmail, setLoginEmail] = useState("");
@@ -77,6 +78,24 @@ export const LoginAuth: React.FC<LoginAuthProps> = ({ initialMode = "login" }) =
       }
     } catch (err: any) {
       setLoginError(err.message || "Something went wrong during verify.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!loginEmail.trim()) {
+      setResetMessage({ type: "error", text: "Please enter your email address first." });
+      return;
+    }
+    setLoading(true);
+    setResetMessage({ type: "", text: "" });
+    try {
+      const res = await resetPassword(loginEmail);
+      setResetMessage({ type: res.success ? "success" : "error", text: res.message });
+    } catch (err: any) {
+      setResetMessage({ type: "error", text: err.message || "Failed to send reset link." });
     } finally {
       setLoading(false);
     }
@@ -157,12 +176,14 @@ export const LoginAuth: React.FC<LoginAuthProps> = ({ initialMode = "login" }) =
               PHILIPPINE INSTITUTIONAL TRADING DESK
             </span>
             <h2 className="text-xl font-black text-white tracking-tight">
-              {mode === "login" ? "SEC Secure Login" : "Open Yield Account"}
+              {mode === "login" ? "SEC Secure Login" : mode === "forgot" ? "Reset Password" : "Open Yield Account"}
             </h2>
             <p className="text-xs text-slate-400">
               {mode === "login" 
                 ? "Enter your secure credentials to coordinate with your terminal manager."
-                : `Step ${signupStep} of 2 — Account configuration`
+                : mode === "forgot" 
+                  ? "Enter your email to receive a password reset link."
+                  : `Step ${signupStep} of 2 — Account configuration`
               }
             </p>
           </div>
@@ -207,6 +228,16 @@ export const LoginAuth: React.FC<LoginAuthProps> = ({ initialMode = "login" }) =
                 <div className="space-y-1.5">
                   <div className="flex justify-between items-center">
                     <label className="text-xs font-bold text-slate-700">Secure Pin / Password</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMode("forgot");
+                        setResetMessage({ type: "", text: "" });
+                      }}
+                      className="text-[10px] text-blue-600 font-bold hover:underline"
+                    >
+                      Forgot Password?
+                    </button>
                   </div>
                   <div className="relative">
                     <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -251,6 +282,63 @@ export const LoginAuth: React.FC<LoginAuthProps> = ({ initialMode = "login" }) =
                       Create Account
                     </button>
                   </p>
+                </div>
+              </motion.form>
+            ) : mode === "forgot" ? (
+              <motion.form
+                key="forgot-form"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 10 }}
+                transition={{ duration: 0.2 }}
+                onSubmit={handleResetSubmit}
+                className="space-y-4"
+              >
+                {resetMessage.text && (
+                  <div className={`p-3 text-xs font-semibold rounded-lg border ${
+                      resetMessage.type === "success" 
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-100" 
+                        : "bg-rose-50 text-rose-700 border-rose-100 animate-shake"
+                    }`}
+                  >
+                    {resetMessage.type === "success" ? "✓" : "⚠️"} {resetMessage.text}
+                  </div>
+                )}
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700">Account Email Address</label>
+                  <div className="relative">
+                    <Mail size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="email"
+                      required
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
+                      placeholder="e.g. name@example.com"
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 rounded-lg outline-none p-3 pl-9.5 text-xs text-slate-900 placeholder-slate-400 transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className={`w-full ${theme.primaryBg} ${theme.hoverBg} text-white font-bold uppercase tracking-wider text-xs py-3.5 rounded-xl shadow-lg active:scale-95 transition-all text-center cursor-pointer mt-2 disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  {loading ? "SENDING LINK..." : "Send Reset Link ➔"}
+                </button>
+
+                <div className="text-center pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode("login");
+                      setResetMessage({ type: "", text: "" });
+                    }}
+                    className="text-slate-500 hover:text-slate-700 text-xs font-bold transition-colors"
+                  >
+                    Cancel and Return to Login
+                  </button>
                 </div>
               </motion.form>
             ) : (

@@ -6,7 +6,8 @@ import {
   onAuthStateChanged, 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
-  signOut 
+  signOut,
+  sendPasswordResetEmail
 } from "firebase/auth";
 import { 
   doc, 
@@ -167,6 +168,7 @@ interface SimulationContextType {
   login: (email: string, password?: string) => Promise<{ success: boolean; message: string }>;
   signup: (profileData: Partial<UserProfile>) => Promise<{ success: boolean; message: string }>;
   logout: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ success: boolean; message: string }>;
   addInvestmentPlan: (plan: InvestmentPlan) => void;
   updateInvestmentPlan: (id: string, plan: Partial<InvestmentPlan>) => void;
   deleteInvestmentPlan: (id: string) => void;
@@ -181,6 +183,9 @@ interface SimulationContextType {
   deleteTicket: (ticketId: string) => Promise<void>;
   updateUserRole: (email: string, role: UserProfile["role"]) => Promise<void>;
   createSupportTicket: (subject: string, category: SupportTicket["category"], message: string, priority: SupportTicket["priority"]) => Promise<void>;
+  deleteUser: (email: string) => Promise<void>;
+  deleteTransaction: (txId: string) => Promise<void>;
+  deleteKyc: (email: string) => Promise<void>;
 }
 
 const DEFAULT_USERS: UserProfile[] = [
@@ -555,6 +560,20 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     return () => unsubscribe();
   }, []);
 
+  // Global settings listener (does not require auth)
+  useEffect(() => {
+    if (isLocalMode) return;
+    const settingsDocRef = doc(db, "settings", "themeConfig");
+    const unsubscribeSettings = onSnapshot(settingsDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setThemeConfig(docSnap.data() as AppThemeConfig);
+      }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, "settings/themeConfig");
+    });
+    return () => unsubscribeSettings();
+  }, [isLocalMode]);
+
   const isLoggedIn = activeUserEmail !== null;
 
   // Real-time collections listener based on roles and authenticated user email
@@ -799,6 +818,20 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   };
 
+  // Password Reset handler
+  const resetPassword = async (email: string) => {
+    try {
+      await sendPasswordResetEmail(auth, email.trim());
+      return { success: true, message: "Password reset link sent! Please check your email." };
+    } catch (err: any) {
+      console.error(err);
+      if (err.code === "auth/user-not-found") {
+         return { success: false, message: "No account found with this email." };
+      }
+      return { success: false, message: err.message || "Failed to send reset link." };
+    }
+  };
+
   // Logout handler
   const logout = async () => {
     if (isLocalMode) {
@@ -1040,8 +1073,16 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setKycFields(fields);
   };
 
-  const updateThemeConfig = (config: Partial<AppThemeConfig>) => {
-    setThemeConfig((prev) => ({ ...prev, ...config }));
+  const updateThemeConfig = async (config: Partial<AppThemeConfig>) => {
+    const newConf = { ...themeConfig, ...config };
+    setThemeConfig(newConf);
+    if (!isLocalMode) {
+      try {
+        await setDoc(doc(db, "settings", "themeConfig"), newConf, { merge: true });
+      } catch (e) {
+        console.error("Failed to sync theme config:", e);
+      }
+    }
   };
 
   // Administrative adjustment action
@@ -1227,6 +1268,61 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   };
 
+  const deleteUser = async (email: string) => {
+    if (isLocalMode) {
+      const localUsersStr = localStorage.getItem("ph_trade_local_users");
+      const uList = localUsersStr ? JSON.parse(localUsersStr) : [...DEFAULT_USERS];
+      saveLocalUsers(uList.filter((u: any) => u.email.toLowerCase() !== email.toLowerCase()));
+      return;
+    }
+    try {
+      const q = query(collection(db, "users"), where("email", "==", email));
+      const qs = await getDocs(q);
+      if (!qs.empty) {
+        await deleteDoc(doc(db, "users", qs.docs[0].id));
+      }
+    } catch (e) {
+      handleFirestoreError(e, OperationType.DELETE, "users");
+    }
+  };
+
+  const deleteTransaction = async (txId: string) => {
+    if (isLocalMode) {
+      const localTx = localStorage.getItem("ph_trade_local_transactions");
+      const txs = localTx ? JSON.parse(localTx) : [...INITIAL_TRANSACTIONS];
+      saveLocalTransactions(txs.filter((t: any) => t.id !== txId));
+      return;
+    }
+    try {
+      await deleteDoc(doc(db, "transactions", txId));
+    } catch (e) {
+      handleFirestoreError(e, OperationType.DELETE, "transactions");
+    }
+  };
+
+  const deleteKyc = async (email: string) => {
+    if (isLocalMode) {
+      const localUsersStr = localStorage.getItem("ph_trade_local_users");
+      const uList = localUsersStr ? JSON.parse(localUsersStr) : [...DEFAULT_USERS];
+      const updatedList = uList.map((u: any) => u.email.toLowerCase() === email.toLowerCase() ? { ...u, kycStatus: "Not Started", kycRejectReason: undefined, idImages: undefined } : u);
+      saveLocalUsers(updatedList);
+      return;
+    }
+    try {
+      const q = query(collection(db, "users"), where("email", "==", email));
+      const qs = await getDocs(q);
+      if (!qs.empty) {
+         await updateDoc(doc(db, "users", qs.docs[0].id), {
+           kycStatus: "Not Started",
+           kycRejectReason: null,
+           idImages: null
+         });
+      }
+    } catch (e) {
+      handleFirestoreError(e, OperationType.UPDATE, "users");
+    }
+  };
+
   const createSupportTicket = async (
     subject: string,
     category: SupportTicket["category"],
@@ -1283,6 +1379,7 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         login,
         signup,
         logout,
+        resetPassword,
         addInvestmentPlan,
         updateInvestmentPlan,
         deleteInvestmentPlan,
@@ -1297,6 +1394,9 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         deleteTicket,
         updateUserRole,
         createSupportTicket,
+        deleteUser,
+        deleteTransaction,
+        deleteKyc,
       }}
     >
       {children}

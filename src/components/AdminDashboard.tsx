@@ -30,6 +30,9 @@ export const AdminDashboard: React.FC = () => {
     updateTicketStatus,
     deleteTicket,
     updateUserRole,
+    deleteUser,
+    deleteTransaction,
+    deleteKyc,
     getThemeStyles
   } = useSimulation();
 
@@ -577,6 +580,26 @@ export const AdminDashboard: React.FC = () => {
                               >
                                 Change Role
                               </button>
+                              <button
+                                onClick={() => {
+                                  if (confirm(`Are you sure you want to reset KYC data for ${u.name}?`)) {
+                                    deleteKyc(u.email);
+                                  }
+                                }}
+                                className="px-2.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-sans text-[10px] font-bold rounded uppercase cursor-pointer"
+                              >
+                                Reset KYC
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (confirm(`Are you sure you want to completely remove user ${u.name}?`)) {
+                                    deleteUser(u.email);
+                                  }
+                                }}
+                                className="px-2.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-sans text-[10px] font-bold rounded uppercase cursor-pointer"
+                              >
+                                Delete
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -864,17 +887,29 @@ export const AdminDashboard: React.FC = () => {
                                 </span>
                               </td>
                               <td className="p-4 text-center">
-                                <button
-                                  onClick={() => {
-                                    setEditingTxId(t.id);
-                                    setNewStatus(t.status);
-                                    setStatusReason(t.statusReason || "");
-                                    setCompanyNote(t.companyNote || "");
-                                  }}
-                                  className="px-2 py-1 bg-slate-900 hover:bg-slate-850 text-white hover:brightness-105 active:scale-95 transition-all rounded font-mono text-[10px] font-bold cursor-pointer"
-                                >
-                                  Update Clearance Status
-                                </button>
+                                <div className="inline-flex gap-2 justify-center">
+                                  <button
+                                    onClick={() => {
+                                      setEditingTxId(t.id);
+                                      setNewStatus(t.status);
+                                      setStatusReason(t.statusReason || "");
+                                      setCompanyNote(t.companyNote || "");
+                                    }}
+                                    className="px-2 py-1 bg-slate-900 hover:bg-slate-850 text-white hover:brightness-105 active:scale-95 transition-all rounded font-mono text-[10px] font-bold cursor-pointer"
+                                  >
+                                    Update Clearance Status
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      if (confirm(`Are you sure you want to delete deposit record ${t.id}?`)) {
+                                        deleteTransaction(t.id);
+                                      }
+                                    }}
+                                    className="px-2 py-1 bg-rose-600 hover:bg-rose-700 text-white hover:brightness-105 active:scale-95 transition-all rounded font-mono text-[10px] font-bold cursor-pointer"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           ))
@@ -976,17 +1011,29 @@ export const AdminDashboard: React.FC = () => {
                                 </span>
                               </td>
                               <td className="p-4 text-center">
-                                <button
-                                  onClick={() => {
-                                    setEditingTxId(t.id);
-                                    setNewStatus(t.status);
-                                    setStatusReason(t.statusReason || "");
-                                    setCompanyNote(t.companyNote || "");
-                                  }}
-                                  className="px-2.5 py-1 bg-red-650 bg-slate-900 hover:bg-slate-850 text-white rounded font-mono text-[10px] font-bold cursor-pointer"
-                                >
-                                  Clearance Action ➔
-                                </button>
+                                <div className="inline-flex gap-2 justify-center">
+                                  <button
+                                    onClick={() => {
+                                      setEditingTxId(t.id);
+                                      setNewStatus(t.status);
+                                      setStatusReason(t.statusReason || "");
+                                      setCompanyNote(t.companyNote || "");
+                                    }}
+                                    className="px-2.5 py-1 bg-red-650 bg-slate-900 hover:bg-slate-850 text-white rounded font-mono text-[10px] font-bold cursor-pointer"
+                                  >
+                                    Clearance Action ➔
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      if (confirm(`Are you sure you want to delete withdrawal record ${t.id}?`)) {
+                                        deleteTransaction(t.id);
+                                      }
+                                    }}
+                                    className="px-2 py-1 bg-rose-600 hover:bg-rose-700 text-white hover:brightness-105 active:scale-95 transition-all rounded font-mono text-[10px] font-bold cursor-pointer"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           ))
