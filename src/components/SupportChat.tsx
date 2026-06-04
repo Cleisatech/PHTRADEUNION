@@ -6,19 +6,41 @@ import { useSimulation } from "../context/SimulationContext";
 export const SupportChat: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState("");
-  const { profile } = useSimulation();
+  const { profile, themeConfig } = useSimulation();
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>(() => {
     return [
       {
         id: "welcome",
         role: "manager",
-        content: `Mabuhay! I am Mateo, your Senior Account Relationship Manager here at PH Trade Union. 🇵🇭 If you have any inquiries regarding your wallet balance, making a secure deposit, or processing any pending withdrawals, feel free to ask me here!`,
+        content: themeConfig?.chatDefaultMessage || `Mabuhay! I am Mateo, your Senior Account Relationship Manager here at PH Trade Union. 🇵🇭 If you have any inquiries regarding your wallet balance, making a secure deposit, or processing any pending withdrawals, feel free to ask me here!`,
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       },
     ];
   });
+
+  // Keep chat greeting updated if admin changes it on the fly
+  useEffect(() => {
+    setChatHistory(prev => {
+      const updated = [...prev];
+      if (updated.length > 0 && updated[0].id === "welcome") {
+        updated[0].content = themeConfig?.chatDefaultMessage || `Mabuhay! I am Mateo, your Senior Account Relationship Manager here at PH Trade Union. 🇵🇭 If you have any inquiries regarding your wallet balance, making a secure deposit, or processing any pending withdrawals, feel free to ask me here!`;
+      }
+      return updated;
+    });
+  }, [themeConfig?.chatDefaultMessage]);
   const [isLoading, setIsLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleCommand = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail === 'open_chat') {
+        setIsOpen(true);
+      }
+    };
+    window.addEventListener('chat_command', handleCommand);
+    return () => window.removeEventListener('chat_command', handleCommand);
+  }, []);
 
   useEffect(() => {
     if (chatEndRef.current) {

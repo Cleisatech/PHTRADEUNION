@@ -56,6 +56,10 @@ export interface AppThemeConfig {
   siteName: string;
   logoEmoji: string;
   fontFamily: "Inter" | "Space Grotesk" | "Outfit" | "Playfair Display" | "JetBrains Mono";
+  signupBonus?: number;
+  depositMessage?: string;
+  depositButtonText?: string;
+  chatDefaultMessage?: string;
 }
 
 export interface InvestmentPlan {
